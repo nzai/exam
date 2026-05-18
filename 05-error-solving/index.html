@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>错中求解</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .q-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 2rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      margin-bottom: 1.5rem;
+    }
+    .q-card .q-text {
+      font-size: 1.15rem;
+      line-height: 1.8;
+      margin-bottom: 1.5rem;
+      color: #333;
+    }
+    .q-card .q-input-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .q-card .q-input-row label {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+    .q-card .q-input-row input {
+      padding: 0.6rem 1rem;
+      border: 3px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 1.2rem;
+      width: 130px;
+      outline: none;
+      text-align: center;
+      transition: border-color 0.2s;
+    }
+    .q-card .q-input-row input:focus {
+      border-color: #667eea;
+    }
+    .q-card .q-input-row input:disabled {
+      background: #f5f5f5;
+    }
+    .feedback {
+      margin-top: 1.25rem;
+      padding: 1rem 1.25rem;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      text-align: center;
+      min-height: 3rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+    .feedback.correct {
+      background: #d4edda;
+      color: #155724;
+    }
+    .feedback.wrong {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    .progress-bar {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      justify-content: center;
+    }
+    .progress-dot {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #e9ecef;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #999;
+      transition: all 0.3s;
+    }
+    .progress-dot.active {
+      background: #667eea;
+      color: #fff;
+      transform: scale(1.15);
+    }
+    .progress-dot.done {
+      background: #28a745;
+      color: #fff;
+    }
+    .progress-dot.wrong-dot {
+      background: #dc3545;
+      color: #fff;
+    }
+    .score-display {
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #667eea;
+      margin-bottom: 1rem;
+    }
+    .result-final {
+      text-align: center;
+      padding: 2rem;
+    }
+    .result-final .big-score {
+      font-size: 4rem;
+      font-weight: 900;
+      color: #667eea;
+    }
+    .result-final .congrats {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: #ff6b6b;
+      margin-top: 0.5rem;
+      animation: pulse 1s ease-in-out infinite alternate;
+    }
+    @keyframes pulse {
+      from { transform: scale(1); }
+      to { transform: scale(1.08); }
+    }
+    .result-final .sub-text {
+      margin-top: 0.75rem;
+      color: #666;
+      font-size: 1rem;
+    }
+    .result-final .wrong-review {
+      margin-top: 1.5rem;
+      text-align: left;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .result-final .wrong-review-item {
+      padding: 0.75rem;
+      border-bottom: 1px solid #eee;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+    .result-final .wrong-review-item:last-child {
+      border-bottom: none;
+    }
+    .countdown-text {
+      font-size: 0.85rem;
+      color: #999;
+      margin-top: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+
+<div class="test-page">
+  <div class="test-header">
+    <a href="../" class="btn-back">← 返回首页</a>
+    <h2>🔍 错中求解</h2>
+    <span class="score-display" id="scoreDisplay">得分：0</span>
+    <span class="timer" id="timerDisplay">⏱ 00:00</span>
+  </div>
+
+  <div class="progress-bar" id="progressBar"></div>
+
+  <div id="questionArea"></div>
+</div>
+
+<script src="../js/common.js"></script>
+<script>
+const TOTAL = 5;
+const generators = [genType1, genType2, genType5, genType1, genType2];
+
+let questions = [];
+let currentIdx = 0;
+let score = 0;
+let results = [];
+let advancing = false;
+let timerSeconds = 0;
+let timerInterval = null;
+
+function randDigit(min, max) { return randInt(min, max); }
+
+function pickNewDigit(old, min, max) {
+  let d;
+  do { d = randInt(min, max); } while (d === old);
+  return d;
+}
+
+function posInfo(pos) {
+  return [
+    { name: '百位', place: 100, min: 1, max: 9 },
+    { name: '十位', place: 10, min: 0, max: 9 },
+    { name: '个位', place: 1, min: 0, max: 9 }
+  ][pos];
+}
+
+function genType1() {
+  while (true) {
+    const d = [randDigit(1, 9), randDigit(0, 9), randDigit(0, 9)];
+    const A = d[0]*100 + d[1]*10 + d[2];
+    if (A > 800) continue;
+    const B = randInt(10, 1000 - A);
+    const correct = A + B;
+    const pos = randInt(0, 2);
+    const info = posInfo(pos);
+    const digit = d[pos];
+    const newDigit = pickNewDigit(digit, info.min, info.max);
+    const error = (newDigit - digit) * info.place;
+    const wrong = correct + error;
+    if (correct >= 100 && correct <= 1000 && wrong >= 100 && wrong <= 1000)
+      return {
+        q: `小明做一道加法算式时，把一个加数${info.name}上的${digit}看成了${newDigit}，结果和是${wrong}，那么正确的和是多少？`,
+        answer: correct
+      };
+  }
+}
+
+function genType2() {
+  while (true) {
+    const da = [randDigit(1, 9), randDigit(0, 9), randDigit(0, 9)];
+    const A = da[0]*100 + da[1]*10 + da[2];
+    if (A > 500) continue;
+    const db = [randDigit(1, 9), randDigit(0, 9), randDigit(0, 9)];
+    const B = db[0]*100 + db[1]*10 + db[2];
+    if (A + B > 1000) continue;
+    const correct = A + B;
+    const pos1 = randInt(0, 2);
+    const info1 = posInfo(pos1);
+    const digit1 = da[pos1];
+    const newDigit1 = pickNewDigit(digit1, info1.min, info1.max);
+    const error1 = (newDigit1 - digit1) * info1.place;
+    const pos2 = randInt(0, 2);
+    const info2 = posInfo(pos2);
+    const digit2 = db[pos2];
+    const newDigit2 = pickNewDigit(digit2, info2.min, info2.max);
+    const error2 = (newDigit2 - digit2) * info2.place;
+    const wrong = correct + error1 + error2;
+    if (correct >= 100 && correct <= 1000 && wrong >= 100 && wrong <= 1000)
+      return {
+        q: `小明做一道加法算式时，错把一个加数${info1.name}上的${digit1}看成了${newDigit1}，把另一个加数${info2.name}上的${digit2}看成了${newDigit2}，结果和是${wrong}，那么正确的和是多少？`,
+        answer: correct
+      };
+  }
+}
+
+function genType5() {
+  while (true) {
+    const d = [randDigit(1, 9), randDigit(0, 9), randDigit(0, 9)];
+    const A = d[0]*100 + d[1]*10 + d[2];
+    if (A > 800) continue;
+    const B = randInt(10, 1000 - A);
+    const correct = A + B;
+    const pool = [0, 1, 2];
+    const idx1 = randInt(0, 2);
+    pool.splice(pool.indexOf(idx1), 1);
+    const idx2 = pool[randInt(0, 1)];
+    const info1 = posInfo(idx1);
+    const info2 = posInfo(idx2);
+    const nd1 = pickNewDigit(d[idx1], info1.min, info1.max);
+    const nd2 = pickNewDigit(d[idx2], info2.min, info2.max);
+    const error = (nd1 - d[idx1]) * info1.place + (nd2 - d[idx2]) * info2.place;
+    const wrong = correct + error;
+    if (correct >= 100 && correct <= 1000 && wrong >= 100 && wrong <= 1000)
+      return {
+        q: `小明做一道加法算式时，把一个加数${info1.name}上的${d[idx1]}看成了${nd1}，${info2.name}上的${d[idx2]}看成了${nd2}，结果和是${wrong}，那么正确的和是多少？`,
+        answer: correct
+      };
+  }
+}
+
+function formatTime(sec) {
+  const m = String(Math.floor(sec / 60)).padStart(2, '0');
+  const s = String(sec % 60).padStart(2, '0');
+  return m + ':' + s;
+}
+
+function startTimer() {
+  stopTimer();
+  timerSeconds = 0;
+  document.getElementById('timerDisplay').textContent = '⏱ 00:00';
+  timerInterval = setInterval(function() {
+    timerSeconds++;
+    document.getElementById('timerDisplay').textContent = '⏱ ' + formatTime(timerSeconds);
+  }, 1000);
+}
+
+function stopTimer() {
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+}
+
+function init() {
+  questions = [];
+  for (let i = 0; i < TOTAL; i++) {
+    questions.push(generators[i]());
+  }
+  currentIdx = 0;
+  score = 0;
+  results = [];
+  advancing = false;
+  updateScore();
+  renderProgress();
+  renderQuestion();
+  startTimer();
+}
+
+function renderProgress() {
+  const bar = document.getElementById('progressBar');
+  bar.innerHTML = '';
+  for (let i = 0; i < TOTAL; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'progress-dot';
+    dot.textContent = i + 1;
+    bar.appendChild(dot);
+  }
+  updateProgress();
+}
+
+function updateProgress() {
+  const dots = document.querySelectorAll('.progress-dot');
+  dots.forEach((dot, i) => {
+    dot.className = 'progress-dot';
+    if (i < currentIdx) {
+      const r = results[i];
+      dot.classList.add(r && r.ok ? 'done' : 'wrong-dot');
+    } else if (i === currentIdx) {
+      dot.classList.add('active');
+    }
+  });
+}
+
+function updateScore() {
+  document.getElementById('scoreDisplay').textContent = '得分：' + score;
+}
+
+function renderQuestion() {
+  if (currentIdx >= TOTAL) {
+    showFinalResult();
+    return;
+  }
+
+  renderProgress();
+  const area = document.getElementById('questionArea');
+  const q = questions[currentIdx];
+
+  area.innerHTML = `
+    <div style="text-align:center;margin-bottom:0.75rem;font-size:0.95rem;color:#888">
+      第 ${currentIdx + 1} / ${TOTAL} 题
+    </div>
+    <div class="q-card">
+      <div class="q-text">${q.q}</div>
+      <div class="q-input-row">
+        <label>答：</label>
+        <input type="number" id="answerInput" placeholder="输入答案" autocomplete="off">
+        <button class="btn btn-success" id="submitBtn">提交</button>
+      </div>
+      <div class="feedback" id="feedback"></div>
+      <div class="countdown-text" id="countdownText"></div>
+    </div>
+  `;
+
+  const input = document.getElementById('answerInput');
+  const btn = document.getElementById('submitBtn');
+  input.focus();
+
+  function handleSubmit() {
+    if (advancing) return;
+    const val = parseInt(input.value, 10);
+    if (isNaN(val)) { input.focus(); return; }
+
+    const ok = val === q.answer;
+    const fb = document.getElementById('feedback');
+
+    if (ok) {
+      score += 20;
+      updateScore();
+      fb.className = 'feedback correct';
+      fb.innerHTML = '✅ 正确！ +20分';
+    } else {
+      fb.className = 'feedback wrong';
+      fb.innerHTML = '❌ 正确答案是：<strong>' + q.answer + '</strong>，你填的是 ' + val;
+    }
+
+    results.push({ q: q.q, yourAnswer: isNaN(val) ? '' : val, correctAnswer: q.answer, ok });
+    input.disabled = true;
+    btn.disabled = true;
+    advancing = true;
+
+    let countdown = 2;
+    document.getElementById('countdownText').textContent = countdown + ' 秒后进入下一题...';
+    const timer = setInterval(() => {
+      countdown--;
+      if (countdown > 0) {
+        document.getElementById('countdownText').textContent = countdown + ' 秒后进入下一题...';
+      } else {
+        clearInterval(timer);
+        currentIdx++;
+        advancing = false;
+        renderQuestion();
+      }
+    }, 1000);
+  }
+
+  btn.addEventListener('click', handleSubmit);
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') handleSubmit();
+  });
+}
+
+function showFinalResult() {
+  const area = document.getElementById('questionArea');
+  const isPerfect = score === 100;
+  const wrongs = results.filter(r => !r.ok);
+
+  let wrongReview = '';
+  if (wrongs.length > 0) {
+    wrongReview = '<div class="wrong-review"><h4 style="margin-bottom:0.75rem;color:#dc3545">错题回顾：</h4>';
+    wrongs.forEach(w => {
+      wrongReview += '<div class="wrong-review-item">' + w.q + '<br><span style="color:#dc3545">你的答案：' + w.yourAnswer + '</span> &nbsp; <span style="color:#28a745">正确答案：' + w.correctAnswer + '</span></div>';
+    });
+    wrongReview += '</div>';
+  }
+
+  stopTimer();
+
+  area.innerHTML =
+    '<div class="result-final">' +
+      '<div class="big-score">' + score + '</div>' +
+      '<div style="font-size:1.2rem;color:#666;margin-top:0.25rem">总分（满分100）</div>' +
+      (isPerfect ? '<div class="congrats">🎉 太棒了！满分通关！</div>' : '') +
+      '<div class="sub-text">答对 ' + results.filter(r => r.ok).length + ' 题，答错 ' + wrongs.length + ' 题</div>' +
+      '<div style="margin-top:0.5rem;font-size:1.1rem;color:#667eea;font-weight:700">⏱ 用时 ' + formatTime(timerSeconds) + '</div>' +
+      wrongReview +
+      '<button class="btn btn-primary" style="margin-top:1.5rem" onclick="init()">重新挑战</button>' +
+    '</div>';
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>小学数学练习</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <h1>📐 小学数学练习</h1>
+  <p>每天练一练，数学好成绩！</p>
+</header>
+
+<div class="container">
+  <div class="card-grid" id="cardGrid"></div>
+</div>
+
+<script>
+const tests = [
+  {
+    id: '05-error-solving',
+    icon: '🔍',
+    title: '错中求解',
+    desc: '将错就错——根据错误过程推算正确结果，考验逻辑推理能力。'
+  }
+];
+
+const grid = document.getElementById('cardGrid');
+tests.forEach(t => {
+  const card = document.createElement('a');
+  card.className = 'card';
+  card.href = t.id + '/';
+  card.innerHTML = `
+    <div class="icon">${t.icon}</div>
+    <h3>${t.title}</h3>
+    <p>${t.desc}</p>
+  `;
+  grid.appendChild(card);
+});
+</script>
+
+</body>
+</html>
