@@ -511,22 +511,13 @@ function genMul() {
 }
 
 function genDiv() {
-  var type = randInt(0, 1);
-  var divisor, quotient, remainder, dividend;
-  if (type === 0) {
-    dividend = randInt(2, 9);
-    divisor = randInt(2, dividend);
-    quotient = Math.floor(dividend / divisor);
-    remainder = dividend % divisor;
-  } else {
-    divisor = randInt(2, 9);
-    var minQ = Math.max(1, Math.ceil(10 / divisor));
-    var maxQ = Math.floor(99 / divisor);
-    if (minQ > maxQ) return null;
-    quotient = randInt(minQ, maxQ);
-    remainder = randInt(0, Math.min(divisor - 1, 99 - divisor * quotient));
-    dividend = divisor * quotient + remainder;
-  }
+  var divisor = randInt(2, 9);
+  var minQ = Math.max(1, Math.ceil(10 / divisor));
+  var maxQ = Math.floor(99 / divisor);
+  if (minQ > maxQ) return null;
+  var quotient = randInt(minQ, maxQ);
+  var remainder = randInt(0, Math.min(divisor - 1, 99 - divisor * quotient));
+  var dividend = divisor * quotient + remainder;
   return {
     expr: dividend + ' ÷ ' + divisor,
     answer: quotient,
@@ -559,21 +550,13 @@ function genMixed() {
       nums[mulPos === 0 ? 0 : 1] = ta;
       nums[mulPos === 0 ? 1 : 2] = tb;
     } else {
-      if (Math.random() < 0.5) {
-        var d2 = randInt(2, 9);
-        var q2 = randInt(1, Math.floor(9 / d2));
-        if (q2 < 1) continue;
-        nums[mulPos === 0 ? 0 : 1] = d2 * q2;
-        nums[mulPos === 0 ? 1 : 2] = d2;
-      } else {
-        var dv = randInt(2, 9);
-        var minQ = Math.max(1, Math.ceil(10 / dv));
-        var maxQ = Math.floor(99 / dv);
-        if (minQ > maxQ) continue;
-        var qt = randInt(minQ, maxQ);
-        nums[mulPos === 0 ? 0 : 1] = dv * qt;
-        nums[mulPos === 0 ? 1 : 2] = dv;
-      }
+      var dv = randInt(2, 9);
+      var minQ = Math.max(1, Math.ceil(10 / dv));
+      var maxQ = Math.floor(99 / dv);
+      if (minQ > maxQ) continue;
+      var qt = randInt(minQ, maxQ);
+      nums[mulPos === 0 ? 0 : 1] = dv * qt;
+      nums[mulPos === 0 ? 1 : 2] = dv;
     }
 
     var otherIdx = mulPos === 0 ? 2 : 0;
