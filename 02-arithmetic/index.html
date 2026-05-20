@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>四则运算</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .mode-select {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      gap: 2rem;
+    }
+    .mode-select h2 {
+      font-size: 1.8rem;
+      color: #333;
+    }
+    .mode-buttons {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .mode-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 2.5rem 3rem;
+      border: 3px solid #e0e0e0;
+      border-radius: 16px;
+      background: #fff;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      color: inherit;
+      min-width: 200px;
+    }
+    .mode-btn:hover {
+      border-color: #667eea;
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(102,126,234,0.15);
+    }
+    .mode-btn .icon {
+      font-size: 3rem;
+    }
+    .mode-btn .label {
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+    .mode-btn .desc {
+      font-size: 0.85rem;
+      color: #888;
+      text-align: center;
+    }
+
+    .config-bar {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1rem 1.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+    }
+    .config-bar label {
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .config-bar select, .config-bar input {
+      padding: 0.4rem 0.6rem;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+    .config-bar select:focus, .config-bar input:focus {
+      border-color: #667eea;
+    }
+    .config-bar input {
+      width: 70px;
+    }
+
+    .print-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+    .print-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .question-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem 2rem;
+    }
+    .q-entry {
+      padding: 0.6rem 0;
+      border-bottom: 1px dashed #ddd;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.05rem;
+      line-height: 1.6;
+    }
+    .q-entry .num {
+      font-weight: 700;
+      color: #667eea;
+      min-width: 2.2rem;
+    }
+    .q-entry .expr {
+      font-weight: 600;
+    }
+    .q-entry .eq {
+      color: #999;
+      margin: 0 0.25rem;
+    }
+    .q-entry .answer-blank {
+      display: inline-block;
+      min-width: 80px;
+      border-bottom: 2px solid #333;
+      margin: 0 0.25rem;
+      text-align: center;
+    }
+    .q-entry .answer-blank.remainder {
+      min-width: 60px;
+    }
+
+    .print-actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .test-page {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+    .test-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+    .test-header h2 {
+      font-size: 1.5rem;
+    }
+    .score-display {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #667eea;
+    }
+
+    .q-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 2rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      margin-bottom: 1.5rem;
+    }
+    .q-card .q-text {
+      font-size: 1.3rem;
+      line-height: 1.8;
+      margin-bottom: 1.5rem;
+      color: #333;
+      text-align: center;
+      font-weight: 600;
+    }
+    .q-card .q-input-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .q-card .q-input-row label {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+    .q-card .q-input-row input {
+      padding: 0.6rem 1rem;
+      border: 3px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 1.2rem;
+      width: 100px;
+      outline: none;
+      text-align: center;
+      transition: border-color 0.2s;
+    }
+    .q-card .q-input-row input:focus {
+      border-color: #667eea;
+    }
+    .q-card .q-input-row input:disabled {
+      background: #f5f5f5;
+    }
+    .q-card .div-group {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .q-card .div-group input {
+      width: 80px;
+    }
+    .q-card .div-group .sep {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #999;
+    }
+
+    .feedback {
+      margin-top: 1.25rem;
+      padding: 1rem 1.25rem;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      text-align: center;
+      min-height: 3rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+    .feedback.correct {
+      background: #d4edda;
+      color: #155724;
+    }
+    .feedback.wrong {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .progress-bar {
+      display: flex;
+      gap: 0.4rem;
+      margin-bottom: 1.5rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .progress-dot {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #e9ecef;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #999;
+      transition: all 0.3s;
+    }
+    .progress-dot.active {
+      background: #667eea;
+      color: #fff;
+      transform: scale(1.15);
+    }
+    .progress-dot.done {
+      background: #28a745;
+      color: #fff;
+    }
+    .progress-dot.wrong-dot {
+      background: #dc3545;
+      color: #fff;
+    }
+
+    .result-final {
+      text-align: center;
+      padding: 2rem;
+    }
+    .result-final .big-score {
+      font-size: 4rem;
+      font-weight: 900;
+      color: #667eea;
+    }
+    .result-final .congrats {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: #ff6b6b;
+      margin-top: 0.5rem;
+      animation: pulse 1s ease-in-out infinite alternate;
+    }
+    @keyframes pulse {
+      from { transform: scale(1); }
+      to { transform: scale(1.08); }
+    }
+    .result-final .sub-text {
+      margin-top: 0.75rem;
+      color: #666;
+      font-size: 1rem;
+    }
+    .result-final .wrong-review {
+      margin-top: 1.5rem;
+      text-align: left;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .result-final .wrong-review-item {
+      padding: 0.75rem;
+      border-bottom: 1px solid #eee;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+    .result-final .wrong-review-item:last-child {
+      border-bottom: none;
+    }
+    .countdown-text {
+      font-size: 0.85rem;
+      color: #999;
+      margin-top: 0.5rem;
+    }
+
+    .hidden { display: none !important; }
+
+    @media print {
+      body { background: #fff; }
+      .no-print { display: none !important; }
+      .print-header h1 { font-size: 1.4rem; }
+      .question-grid { grid-template-columns: repeat(3, 1fr); gap: 0.3rem 1rem; }
+      .q-entry { font-size: 0.9rem; padding: 0.3rem 0; border-bottom: 1px dotted #ccc; }
+      .q-entry .answer-blank { border-bottom: 1px solid #000; min-width: 60px; }
+      .q-entry .answer-blank.remainder { min-width: 40px; }
+    }
+
+    @media (max-width: 600px) {
+      .question-grid { grid-template-columns: 1fr; }
+      .mode-buttons { flex-direction: column; align-items: stretch; }
+      .mode-btn { padding: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="modeSelect" class="mode-select">
+  <h2>📐 四则运算</h2>
+  <p style="color:#888;margin-top:-1rem">选择模式开始练习</p>
+  <div class="mode-buttons">
+    <div class="mode-btn" onclick="startPrint()">
+      <div class="icon">🖨️</div>
+      <div class="label">打印模式</div>
+      <div class="desc">生成只读试题，适合打印到A4纸</div>
+    </div>
+    <div class="mode-btn" onclick="startTest()">
+      <div class="icon">📝</div>
+      <div class="label">测试模式</div>
+      <div class="desc">交互答题，计时计分，错题回顾</div>
+    </div>
+    <a href="../" class="mode-btn" style="padding:2rem 2.5rem">
+      <div class="icon">←</div>
+      <div class="label">返回首页</div>
+    </a>
+  </div>
+</div>
+
+<div id="printArea" class="hidden">
+  <div class="print-container">
+    <div class="print-header no-print">
+      <h1>🖨️ 四则运算 · 打印版</h1>
+      <div>
+        <button class="btn btn-primary" onclick="window.print()">🖨️ 打印</button>
+        <button class="btn btn-outline" onclick="backToMenu()">← 返回</button>
+      </div>
+    </div>
+    <div id="printContent"></div>
+  </div>
+</div>
+
+<div id="testArea" class="hidden">
+  <div class="test-page">
+    <div class="test-header">
+      <button class="btn btn-outline" onclick="backToMenu()" style="padding:0.4rem 1rem;font-size:0.85rem">← 返回</button>
+      <h2>📝 四则运算</h2>
+      <span class="score-display" id="scoreDisplay">得分：0</span>
+      <span class="timer" id="timerDisplay">⏱ 00:00</span>
+    </div>
+    <div class="progress-bar" id="progressBar"></div>
+    <div id="questionArea"></div>
+  </div>
+</div>
+
+<script src="../js/common.js"></script>
+<script>
+var allQuestions = [];
+var testQuestions = [];
+var currentIdx = 0;
+var score = 0;
+var results = [];
+var advancing = false;
+var timerSeconds = 0;
+var timerInterval = null;
+var TOTAL = 50;
+
+function backToMenu() {
+  stopTimer();
+  document.getElementById('modeSelect').classList.remove('hidden');
+  document.getElementById('printArea').classList.add('hidden');
+  document.getElementById('testArea').classList.add('hidden');
+}
+
+// ========== Evaluation ==========
+function evalExpr(expr) {
+  var tokens = expr.split(' ').filter(function(t) { return t !== ''; });
+  var i = 1;
+  while (i < tokens.length) {
+    if (tokens[i] === '×' || tokens[i] === '÷') {
+      var a = parseInt(tokens[i-1], 10);
+      var b = parseInt(tokens[i+1], 10);
+      var val;
+      if (tokens[i] === '×') {
+        val = a * b;
+      } else {
+        if (a % b !== 0) return null;
+        val = a / b;
+      }
+      tokens.splice(i-1, 3, String(val));
+      i = 1;
+    } else {
+      i += 2;
+    }
+  }
+  var result = parseInt(tokens[0], 10);
+  for (var j = 1; j < tokens.length; j += 2) {
+    var op = tokens[j];
+    var num = parseInt(tokens[j+1], 10);
+    if (op === '+') result += num;
+    else if (op === '-') result -= num;
+  }
+  return result;
+}
+
+// ========== Generators ==========
+function genAdd() {
+  var count = randInt(2, 4);
+  var nums = [];
+  var sum = 0;
+  for (var i = 0; i < count; i++) {
+    var remaining = count - i;
+    var max = Math.min(1000 - sum - remaining, 900);
+    var min = 1;
+    if (max < min) return null;
+    var n = randInt(min, max);
+    nums.push(n);
+    sum += n;
+  }
+  if (sum <= 0 || sum > 1000) return null;
+  return {
+    expr: nums.join(' + '),
+    answer: sum,
+    type: 'add',
+    hasRemainder: false
+  };
+}
+
+function genSub() {
+  var count = randInt(2, 4);
+  var current = randInt(count * 2, 1000);
+  var nums = [current];
+  for (var i = 1; i < count; i++) {
+    var min = 1;
+    var max = current - 1;
+    if (max < min) return null;
+    var n = randInt(min, max);
+    current -= n;
+    nums.push(n);
+  }
+  if (current <= 0 || current > 1000) return null;
+  return {
+    expr: nums.join(' - '),
+    answer: current,
+    type: 'sub',
+    hasRemainder: false
+  };
+}
+
+function genMul() {
+  var count = randInt(2, 4);
+  var nums = [];
+  var product = 1;
+  for (var i = 0; i < count; i++) {
+    var remaining = count - i;
+    var max = Math.min(Math.floor(1000 / product), 30);
+    var min = 2;
+    if (max < min) return null;
+    var n = randInt(min, max);
+    product *= n;
+    nums.push(n);
+  }
+  if (product <= 0 || product > 1000) return null;
+  return {
+    expr: nums.join(' × '),
+    answer: product,
+    type: 'mul',
+    hasRemainder: false
+  };
+}
+
+function genDiv() {
+  var dividend = randInt(10, 1000);
+  var divisor = randInt(2, Math.min(dividend, 99));
+  var quotient = Math.floor(dividend / divisor);
+  var remainder = dividend % divisor;
+  if (quotient <= 0 || quotient > 1000) return null;
+  return {
+    expr: dividend + ' ÷ ' + divisor,
+    answer: quotient,
+    remainder: remainder,
+    type: 'div',
+    hasRemainder: true
+  };
+}
+
+function genMixed() {
+  var count = randInt(3, 4);
+  var hasMulDiv = Math.random() < 0.6;
+  var ops = [];
+  var mulDivPos = -1;
+  if (hasMulDiv) {
+    mulDivPos = randInt(0, count - 2);
+    for (var i = 0; i < count - 1; i++) {
+      if (i === mulDivPos) {
+        ops.push(Math.random() < 0.5 ? '×' : '÷');
+      } else {
+        ops.push(Math.random() < 0.5 ? '+' : '-');
+      }
+    }
+  } else {
+    for (var j = 0; j < count - 1; j++) {
+      ops.push(Math.random() < 0.5 ? '+' : '-');
+    }
+  }
+
+  for (var attempt = 0; attempt < 200; attempt++) {
+    var nums = [];
+    for (var k = 0; k < count; k++) {
+      nums.push(randInt(1, 200));
+    }
+    var tokens = [];
+    for (var m = 0; m < count; m++) {
+      tokens.push(String(nums[m]));
+      if (m < count - 1) tokens.push(ops[m]);
+    }
+    var expr = tokens.join(' ');
+    var result = evalExpr(expr);
+    if (result !== null && result > 0 && result <= 1000) {
+      var isPureAdd = ops.every(function(o) { return o === '+'; });
+      var isPureSub = ops.every(function(o) { return o === '-'; });
+      var isPureMul = ops.every(function(o) { return o === '×'; });
+      if (isPureAdd || isPureSub || isPureMul) continue;
+      return {
+        expr: expr,
+        answer: result,
+        type: 'mix',
+        hasRemainder: false
+      };
+    }
+  }
+  return null;
+}
+
+function generateAll() {
+  var questions = [];
+  var generators = [
+    { fn: genAdd, label: '加法' },
+    { fn: genSub, label: '减法' },
+    { fn: genMul, label: '乘法' },
+    { fn: genDiv, label: '除法' },
+    { fn: genMixed, label: '混合' }
+  ];
+
+  generators.forEach(function(g) {
+    var count = 0;
+    var attempts = 0;
+    while (count < 10 && attempts < 500) {
+      attempts++;
+      var q = g.fn();
+      if (q) {
+        q.category = g.label;
+        questions.push(q);
+        count++;
+      }
+    }
+  });
+
+  return questions;
+}
+
+// ========== Print Mode ==========
+function startPrint() {
+  document.getElementById('modeSelect').classList.add('hidden');
+  document.getElementById('printArea').classList.remove('hidden');
+  document.getElementById('testArea').classList.add('hidden');
+
+  allQuestions = generateAll();
+  renderPrint();
+}
+
+function formatExpr(q) {
+  return q.expr.replace(/×/g, ' × ').replace(/÷/g, ' ÷ ').replace(/\s+/g, ' ');
+}
+
+function renderPrint() {
+  var html = '';
+  var categories = ['加法', '减法', '乘法', '除法', '混合'];
+  var num = 0;
+
+  categories.forEach(function(cat) {
+    var items = allQuestions.filter(function(q) { return q.category === cat; });
+    html += '<h3 style="margin:1.5rem 0 0.5rem 0;color:#667eea">' + cat + '</h3>';
+    html += '<div class="question-grid">';
+
+    items.forEach(function(q) {
+      num++;
+      var answerHtml;
+      if (q.hasRemainder) {
+        answerHtml = '= <span class="answer-blank">____</span> <span style="font-weight:700;color:#999">余</span> <span class="answer-blank remainder">____</span>';
+      } else {
+        answerHtml = '= <span class="answer-blank">____</span>';
+      }
+      html += '<div class="q-entry"><span class="num">' + num + '.</span><span class="expr">' + formatExpr(q) + '</span> <span class="eq">' + answerHtml + '</span></div>';
+    });
+
+    html += '</div>';
+  });
+
+  document.getElementById('printContent').innerHTML = html;
+}
+
+// ========== Test Mode ==========
+function startTest() {
+  document.getElementById('modeSelect').classList.add('hidden');
+  document.getElementById('printArea').classList.add('hidden');
+  document.getElementById('testArea').classList.remove('hidden');
+
+  allQuestions = generateAll();
+  testQuestions = shuffle(allQuestions.slice());
+  TOTAL = testQuestions.length;
+  currentIdx = 0;
+  score = 0;
+  results = [];
+  advancing = false;
+  updateScore();
+  renderProgress();
+  renderQuestion();
+  startTimer();
+}
+
+function formatTime(sec) {
+  var m = String(Math.floor(sec / 60)).padStart(2, '0');
+  var s = String(sec % 60).padStart(2, '0');
+  return m + ':' + s;
+}
+
+function startTimer() {
+  stopTimer();
+  timerSeconds = 0;
+  document.getElementById('timerDisplay').textContent = '⏱ 00:00';
+  timerInterval = setInterval(function() {
+    timerSeconds++;
+    document.getElementById('timerDisplay').textContent = '⏱ ' + formatTime(timerSeconds);
+  }, 1000);
+}
+
+function stopTimer() {
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+}
+
+function renderProgress() {
+  var bar = document.getElementById('progressBar');
+  bar.innerHTML = '';
+  for (var i = 0; i < TOTAL; i++) {
+    var dot = document.createElement('div');
+    dot.className = 'progress-dot';
+    dot.textContent = i + 1;
+    bar.appendChild(dot);
+  }
+  updateProgress();
+}
+
+function updateProgress() {
+  var dots = document.querySelectorAll('.progress-dot');
+  dots.forEach(function(dot, i) {
+    dot.className = 'progress-dot';
+    if (i < currentIdx) {
+      var r = results[i];
+      dot.classList.add(r && r.ok ? 'done' : 'wrong-dot');
+    } else if (i === currentIdx) {
+      dot.classList.add('active');
+    }
+  });
+}
+
+function updateScore() {
+  document.getElementById('scoreDisplay').textContent = '得分：' + score;
+}
+
+function renderQuestion() {
+  if (currentIdx >= TOTAL) {
+    showFinalResult();
+    return;
+  }
+
+  updateProgress();
+  var area = document.getElementById('questionArea');
+  var q = testQuestions[currentIdx];
+
+  var inputHtml;
+  if (q.hasRemainder) {
+    inputHtml = '<span class="div-group"><input type="number" id="answerInput" placeholder="商" autocomplete="off"><span class="sep">余</span><input type="number" id="remainderInput" placeholder="余数" autocomplete="off"></span>';
+  } else {
+    inputHtml = '<input type="number" id="answerInput" placeholder="输入答案" autocomplete="off">';
+  }
+
+  area.innerHTML =
+    '<div style="text-align:center;margin-bottom:0.75rem;font-size:0.95rem;color:#888">第 ' + (currentIdx + 1) + ' / ' + TOTAL + ' 题 <span style="margin-left:0.5rem;color:#667eea;font-weight:600">[' + q.category + ']</span></div>' +
+    '<div class="q-card">' +
+      '<div class="q-text">' + formatExpr(q) + ' = ？</div>' +
+      '<div class="q-input-row">' +
+        '<label>答：</label>' +
+        inputHtml +
+        '<button class="btn btn-success" id="submitBtn">提交</button>' +
+      '</div>' +
+      '<div class="feedback" id="feedback"></div>' +
+      '<div class="countdown-text" id="countdownText"></div>' +
+    '</div>';
+
+  var input = document.getElementById('answerInput');
+  var btn = document.getElementById('submitBtn');
+  if (input) input.focus();
+
+  function handleSubmit() {
+    if (advancing) return;
+    var val = parseInt(document.getElementById('answerInput').value, 10);
+    if (isNaN(val)) { document.getElementById('answerInput').focus(); return; }
+
+    var ok, fbEl = document.getElementById('feedback');
+    var yourAnswer;
+
+    if (q.hasRemainder) {
+      var rem = parseInt(document.getElementById('remainderInput').value, 10);
+      if (isNaN(rem)) { document.getElementById('remainderInput').focus(); return; }
+      ok = (val === q.answer && rem === q.remainder);
+      yourAnswer = val + ' 余 ' + rem;
+    } else {
+      ok = (val === q.answer);
+      yourAnswer = String(val);
+    }
+
+    if (ok) {
+      score += 2;
+      updateScore();
+      fbEl.className = 'feedback correct';
+      fbEl.innerHTML = '✅ 正确！ +2分';
+    } else {
+      var correctStr = q.hasRemainder ? (q.answer + ' 余 ' + q.remainder) : String(q.answer);
+      fbEl.className = 'feedback wrong';
+      fbEl.innerHTML = '❌ 正确答案：<strong>' + correctStr + '</strong>，你填的是 ' + yourAnswer;
+    }
+
+    results.push({
+      q: formatExpr(q),
+      category: q.category,
+      yourAnswer: yourAnswer,
+      correctAnswer: q.hasRemainder ? (q.answer + ' 余 ' + q.remainder) : String(q.answer),
+      ok: ok
+    });
+
+    document.getElementById('answerInput').disabled = true;
+    var remInput = document.getElementById('remainderInput');
+    if (remInput) remInput.disabled = true;
+    btn.disabled = true;
+    advancing = true;
+
+    var countdown = 2;
+    document.getElementById('countdownText').textContent = countdown + ' 秒后进入下一题...';
+    var timer = setInterval(function() {
+      countdown--;
+      if (countdown > 0) {
+        document.getElementById('countdownText').textContent = countdown + ' 秒后进入下一题...';
+      } else {
+        clearInterval(timer);
+        currentIdx++;
+        advancing = false;
+        renderQuestion();
+      }
+    }, 1000);
+  }
+
+  btn.addEventListener('click', handleSubmit);
+  if (input) {
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') handleSubmit();
+    });
+  }
+  var remInput = document.getElementById('remainderInput');
+  if (remInput) {
+    remInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') handleSubmit();
+    });
+  }
+}
+
+function showFinalResult() {
+  var area = document.getElementById('questionArea');
+  var totalPossible = TOTAL * 2;
+  var isPerfect = score === totalPossible;
+  var wrongs = results.filter(function(r) { return !r.ok; });
+
+  var wrongReview = '';
+  if (wrongs.length > 0) {
+    wrongReview = '<div class="wrong-review"><h4 style="margin-bottom:0.75rem;color:#dc3545">错题回顾：</h4>';
+    wrongs.forEach(function(w) {
+      wrongReview += '<div class="wrong-review-item">[' + w.category + '] ' + w.q + '<br><span style="color:#dc3545">你的答案：' + w.yourAnswer + '</span> &nbsp; <span style="color:#28a745">正确答案：' + w.correctAnswer + '</span></div>';
+    });
+    wrongReview += '</div>';
+  }
+
+  stopTimer();
+
+  area.innerHTML =
+    '<div class="result-final">' +
+      '<div class="big-score">' + score + ' / ' + totalPossible + '</div>' +
+      '<div style="font-size:1.2rem;color:#666;margin-top:0.25rem">总分（满分' + totalPossible + '）</div>' +
+      (isPerfect ? '<div class="congrats">🎉 太棒了！满分通关！</div>' : '') +
+      '<div class="sub-text">答对 ' + results.filter(function(r) { return r.ok; }).length + ' 题，答错 ' + wrongs.length + ' 题</div>' +
+      '<div style="margin-top:0.5rem;font-size:1.1rem;color:#667eea;font-weight:700">⏱ 用时 ' + formatTime(timerSeconds) + '</div>' +
+      wrongReview +
+      '<button class="btn btn-primary" style="margin-top:1.5rem" onclick="startTest()">重新挑战</button>' +
+      '<button class="btn btn-outline" style="margin-top:1rem;margin-left:0.5rem" onclick="backToMenu()">返回菜单</button>' +
+    '</div>';
+}
+</script>
+</body>
+</html>
