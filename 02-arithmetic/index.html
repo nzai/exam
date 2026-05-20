@@ -105,7 +105,6 @@
     }
     .q-entry {
       padding: 0.6rem 0;
-      border-bottom: 1px dashed #ddd;
       display: flex;
       align-items: center;
       gap: 0.5rem;
@@ -123,16 +122,6 @@
     .q-entry .eq {
       color: #999;
       margin: 0 0.25rem;
-    }
-    .q-entry .answer-blank {
-      display: inline-block;
-      min-width: 80px;
-      border-bottom: 2px solid #333;
-      margin: 0 0.25rem;
-      text-align: center;
-    }
-    .q-entry .answer-blank.remainder {
-      min-width: 60px;
     }
 
     .print-actions {
@@ -194,7 +183,7 @@
       border: 3px solid #e0e0e0;
       border-radius: 10px;
       font-size: 1.2rem;
-      width: 100px;
+      width: 140px;
       outline: none;
       text-align: center;
       transition: border-color 0.2s;
@@ -211,7 +200,7 @@
       gap: 0.75rem;
     }
     .q-card .div-group input {
-      width: 80px;
+      width: 120px;
     }
     .q-card .div-group .sep {
       font-size: 1.1rem;
@@ -329,9 +318,7 @@
       .no-print { display: none !important; }
       .print-header h1 { font-size: 1.4rem; }
       .question-grid { grid-template-columns: repeat(3, 1fr); gap: 0.3rem 1rem; }
-      .q-entry { font-size: 0.9rem; padding: 0.3rem 0; border-bottom: 1px dotted #ccc; }
-      .q-entry .answer-blank { border-bottom: 1px solid #000; min-width: 60px; }
-      .q-entry .answer-blank.remainder { min-width: 40px; }
+      .q-entry { font-size: 0.9rem; padding: 0.3rem 0; }
     }
 
     @media (max-width: 600px) {
@@ -442,13 +429,20 @@ function evalExpr(expr) {
 
 // ========== Generators ==========
 function genAdd() {
-  var count = randInt(2, 4);
+  var count = randInt(2, 3);
   var nums = [];
   var sum = 0;
+  var threeDigitCount = randInt(0, Math.min(2, count));
+  var threePos = [];
+  while (threePos.length < threeDigitCount) {
+    var p = randInt(0, count - 1);
+    if (threePos.indexOf(p) === -1) threePos.push(p);
+  }
   for (var i = 0; i < count; i++) {
-    var remaining = count - i;
-    var max = Math.min(1000 - sum - remaining, 900);
+    var remaining = count - i - 1;
+    var maxPossible = 1000 - sum - remaining;
     var min = 1;
+    var max = threePos.indexOf(i) !== -1 ? Math.min(999, maxPossible) : Math.min(99, maxPossible);
     if (max < min) return null;
     var n = randInt(min, max);
     nums.push(n);
@@ -464,12 +458,22 @@ function genAdd() {
 }
 
 function genSub() {
-  var count = randInt(2, 4);
-  var current = randInt(count * 2, 1000);
+  var count = randInt(2, 3);
+  var threeDigitCount = randInt(0, Math.min(2, count));
+  var threePos = [];
+  while (threePos.length < threeDigitCount) {
+    var p = randInt(0, count - 1);
+    if (threePos.indexOf(p) === -1) threePos.push(p);
+  }
+  var minuendMin = threePos.indexOf(0) !== -1 ? 100 : count;
+  var minuendMax = 999;
+  var current = randInt(minuendMin, minuendMax);
   var nums = [current];
   for (var i = 1; i < count; i++) {
+    var remaining = count - i;
+    var max = current - remaining + 1;
+    if (threePos.indexOf(i) === -1) max = Math.min(max, 99);
     var min = 1;
-    var max = current - 1;
     if (max < min) return null;
     var n = randInt(min, max);
     current -= n;
@@ -485,21 +489,13 @@ function genSub() {
 }
 
 function genMul() {
-  var count = randInt(2, 4);
-  var nums = [];
-  var product = 1;
-  for (var i = 0; i < count; i++) {
-    var remaining = count - i;
-    var max = Math.min(Math.floor(1000 / product), 30);
-    var min = 2;
-    if (max < min) return null;
-    var n = randInt(min, max);
-    product *= n;
-    nums.push(n);
-  }
-  if (product <= 0 || product > 1000) return null;
+  var a = randInt(2, 100);
+  var maxB = Math.min(100, Math.floor(1000 / a));
+  if (maxB < 2) return null;
+  var b = randInt(2, maxB);
+  var product = a * b;
   return {
-    expr: nums.join(' × '),
+    expr: a + ' × ' + b,
     answer: product,
     type: 'mul',
     hasRemainder: false
@@ -507,11 +503,12 @@ function genMul() {
 }
 
 function genDiv() {
-  var dividend = randInt(10, 1000);
-  var divisor = randInt(2, Math.min(dividend, 99));
-  var quotient = Math.floor(dividend / divisor);
-  var remainder = dividend % divisor;
-  if (quotient <= 0 || quotient > 1000) return null;
+  var divisor = randInt(2, 100);
+  var maxQuotient = Math.min(100, Math.floor(1000 / divisor));
+  if (maxQuotient < 1) return null;
+  var quotient = randInt(1, maxQuotient);
+  var remainder = randInt(0, divisor - 1);
+  var dividend = divisor * quotient + remainder;
   return {
     expr: dividend + ' ÷ ' + divisor,
     answer: quotient,
@@ -611,29 +608,16 @@ function formatExpr(q) {
 }
 
 function renderPrint() {
-  var html = '';
-  var categories = ['加法', '减法', '乘法', '除法', '混合'];
+  var html = '<div class="question-grid">';
   var num = 0;
 
-  categories.forEach(function(cat) {
-    var items = allQuestions.filter(function(q) { return q.category === cat; });
-    html += '<h3 style="margin:1.5rem 0 0.5rem 0;color:#667eea">' + cat + '</h3>';
-    html += '<div class="question-grid">';
-
-    items.forEach(function(q) {
-      num++;
-      var answerHtml;
-      if (q.hasRemainder) {
-        answerHtml = '= <span class="answer-blank">____</span> <span style="font-weight:700;color:#999">余</span> <span class="answer-blank remainder">____</span>';
-      } else {
-        answerHtml = '= <span class="answer-blank">____</span>';
-      }
-      html += '<div class="q-entry"><span class="num">' + num + '.</span><span class="expr">' + formatExpr(q) + '</span> <span class="eq">' + answerHtml + '</span></div>';
-    });
-
-    html += '</div>';
+  allQuestions.forEach(function(q) {
+    num++;
+    var answerHtml = q.hasRemainder ? '= ____ 余 ____' : '= ____';
+    html += '<div class="q-entry"><span class="num">' + num + '.</span><span class="expr">' + formatExpr(q) + '</span> <span class="eq">' + answerHtml + '</span></div>';
   });
 
+  html += '</div>';
   document.getElementById('printContent').innerHTML = html;
 }
 
@@ -723,7 +707,7 @@ function renderQuestion() {
   }
 
   area.innerHTML =
-    '<div style="text-align:center;margin-bottom:0.75rem;font-size:0.95rem;color:#888">第 ' + (currentIdx + 1) + ' / ' + TOTAL + ' 题 <span style="margin-left:0.5rem;color:#667eea;font-weight:600">[' + q.category + ']</span></div>' +
+    '<div style="text-align:center;margin-bottom:0.75rem;font-size:0.95rem;color:#888">第 ' + (currentIdx + 1) + ' / ' + TOTAL + ' 题</div>' +
     '<div class="q-card">' +
       '<div class="q-text">' + formatExpr(q) + ' = ？</div>' +
       '<div class="q-input-row">' +
