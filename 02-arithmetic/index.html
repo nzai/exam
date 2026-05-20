@@ -494,11 +494,14 @@ function genMul() {
     a = randInt(2, 9);
     b = randInt(2, 9);
   } else {
-    a = randInt(10, 99);
-    b = randInt(2, 9);
+    a = randInt(10, 50);
+    var maxB = Math.min(9, Math.floor(100 / a));
+    if (maxB < 2) return null;
+    b = randInt(2, maxB);
     if (Math.random() < 0.5) { var t = a; a = b; b = t; }
   }
   var product = a * b;
+  if (product > 100) return null;
   return {
     expr: a + ' × ' + b,
     answer: product,
@@ -583,8 +586,13 @@ function genMixed() {
   return null;
 }
 
+function normalizeExpr(expr) {
+  return expr.replace(/\s+/g, '').replace(/×/g, '*').replace(/÷/g, '/');
+}
+
 function generateAll() {
   var questions = [];
+  var seen = {};
   var generators = [
     { fn: genAdd, label: '加法' },
     { fn: genSub, label: '减法' },
@@ -600,6 +608,9 @@ function generateAll() {
       attempts++;
       var q = g.fn();
       if (q) {
+        var key = normalizeExpr(q.expr);
+        if (seen[key]) continue;
+        seen[key] = true;
         q.category = g.label;
         questions.push(q);
         count++;
