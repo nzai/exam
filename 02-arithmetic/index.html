@@ -831,6 +831,7 @@ function renderQuestion() {
 }
 
 function showFinalResult() {
+  updateProgress();
   var area = document.getElementById('questionArea');
   var totalPossible = TOTAL * 2;
   var isPerfect = score === totalPossible;

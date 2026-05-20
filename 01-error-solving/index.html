@@ -410,6 +410,7 @@ function renderQuestion() {
 }
 
 function showFinalResult() {
+  updateProgress();
   const area = document.getElementById('questionArea');
   const isPerfect = score === 100;
   const wrongs = results.filter(r => !r.ok);
