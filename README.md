@@ -11,7 +11,7 @@ exam/
 ├── index.html               # 首页导航
 ├── css/style.css             # 共享样式
 ├── js/common.js              # 共享工具函数
-├── 05-error-solving/         # 错中求解
+├── 01-error-solving/         # 错中求解
 │   └── index.html
 └── README.md
 ```
