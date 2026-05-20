@@ -489,10 +489,15 @@ function genSub() {
 }
 
 function genMul() {
-  var a = randInt(2, 100);
-  var maxB = Math.min(100, Math.floor(1000 / a));
-  if (maxB < 2) return null;
-  var b = randInt(2, maxB);
+  var a, b, type = randInt(0, 1);
+  if (type === 0) {
+    a = randInt(2, 9);
+    b = randInt(2, 9);
+  } else {
+    a = randInt(10, 99);
+    b = randInt(2, 9);
+    if (Math.random() < 0.5) { var t = a; a = b; b = t; }
+  }
   var product = a * b;
   return {
     expr: a + ' × ' + b,
@@ -503,12 +508,22 @@ function genMul() {
 }
 
 function genDiv() {
-  var divisor = randInt(2, 100);
-  var maxQuotient = Math.min(100, Math.floor(1000 / divisor));
-  if (maxQuotient < 1) return null;
-  var quotient = randInt(1, maxQuotient);
-  var remainder = randInt(0, divisor - 1);
-  var dividend = divisor * quotient + remainder;
+  var type = randInt(0, 1);
+  var divisor, quotient, remainder, dividend;
+  if (type === 0) {
+    dividend = randInt(2, 9);
+    divisor = randInt(2, dividend);
+    quotient = Math.floor(dividend / divisor);
+    remainder = dividend % divisor;
+  } else {
+    divisor = randInt(2, 9);
+    var minQ = Math.max(1, Math.ceil(10 / divisor));
+    var maxQ = Math.floor(99 / divisor);
+    if (minQ > maxQ) return null;
+    quotient = randInt(minQ, maxQ);
+    remainder = randInt(0, Math.min(divisor - 1, 99 - divisor * quotient));
+    dividend = divisor * quotient + remainder;
+  }
   return {
     expr: dividend + ' ÷ ' + divisor,
     answer: quotient,
@@ -519,18 +534,13 @@ function genDiv() {
 }
 
 function genMixed() {
-  var count = randInt(3, 4);
-  var hasMulDiv = Math.random() < 0.6;
+  var count = randInt(2, 3);
+  var hasMulDiv = Math.random() < 0.5;
   var ops = [];
-  var mulDivPos = -1;
   if (hasMulDiv) {
-    mulDivPos = randInt(0, count - 2);
+    var mulPos = randInt(0, count - 2);
     for (var i = 0; i < count - 1; i++) {
-      if (i === mulDivPos) {
-        ops.push(Math.random() < 0.5 ? '×' : '÷');
-      } else {
-        ops.push(Math.random() < 0.5 ? '+' : '-');
-      }
+      ops.push(i === mulPos ? (Math.random() < 0.5 ? '×' : '÷') : (Math.random() < 0.5 ? '+' : '-'));
     }
   } else {
     for (var j = 0; j < count - 1; j++) {
@@ -539,9 +549,16 @@ function genMixed() {
   }
 
   for (var attempt = 0; attempt < 200; attempt++) {
+    var threeDigitCount = randInt(0, Math.min(2, count));
+    var threePos = [];
+    while (threePos.length < threeDigitCount) {
+      var p = randInt(0, count - 1);
+      if (threePos.indexOf(p) === -1) threePos.push(p);
+    }
     var nums = [];
     for (var k = 0; k < count; k++) {
-      nums.push(randInt(1, 200));
+      var maxVal = threePos.indexOf(k) !== -1 ? 999 : 99;
+      nums.push(randInt(1, maxVal));
     }
     var tokens = [];
     for (var m = 0; m < count; m++) {
@@ -613,8 +630,7 @@ function renderPrint() {
 
   allQuestions.forEach(function(q) {
     num++;
-    var answerHtml = q.hasRemainder ? '= ____ 余 ____' : '= ____';
-    html += '<div class="q-entry"><span class="num">' + num + '.</span><span class="expr">' + formatExpr(q) + '</span> <span class="eq">' + answerHtml + '</span></div>';
+    html += '<div class="q-entry"><span class="num">' + num + '.</span><span class="expr">' + formatExpr(q) + '</span> <span class="eq">=</span></div>';
   });
 
   html += '</div>';
